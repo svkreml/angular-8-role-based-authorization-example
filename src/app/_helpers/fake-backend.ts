@@ -18,7 +18,8 @@ export class FakeBackendInterceptor implements HttpInterceptor {
         // wrap in delayed observable to simulate server api call
         return of(null)
             .pipe(mergeMap(handleRoute))
-            .pipe(materialize()) // call materialize and dematerialize to ensure delay even if an error is thrown (https://github.com/Reactive-Extensions/RxJS/issues/648)
+            .pipe(materialize()) // call materialize and dematerialize to ensure delay
+            // even if an error is thrown (https://github.com/Reactive-Extensions/RxJS/issues/648)
             .pipe(delay(500))
             .pipe(dematerialize());
 
@@ -42,7 +43,7 @@ export class FakeBackendInterceptor implements HttpInterceptor {
         function authenticate() {
             const { username, password } = body;
             const user = users.find(x => x.username === username && x.password === password);
-            if (!user) return error('Username or password is incorrect');
+            if (!user) { return error('Username or password is incorrect'); }
             return ok({
                 id: user.id,
                 username: user.username,
@@ -54,15 +55,15 @@ export class FakeBackendInterceptor implements HttpInterceptor {
         }
 
         function getUsers() {
-            if (!isAdmin()) return unauthorized();
+            if (!isAdmin()) { return unauthorized(); }
             return ok(users);
         }
 
         function getUserById() {
-            if (!isLoggedIn()) return unauthorized();
+            if (!isLoggedIn()) { return unauthorized(); }
 
             // only admins can access other user records
-            if (!isAdmin() && currentUser().id !== idFromUrl()) return unauthorized();
+            if (!isAdmin() && currentUser().id !== idFromUrl()) { return unauthorized(); }
 
             const user = users.find(x => x.id === idFromUrl());
             return ok(user);
@@ -70,6 +71,7 @@ export class FakeBackendInterceptor implements HttpInterceptor {
 
         // helper functions
 
+      // tslint:disable-next-line:no-shadowed-variable
         function ok(body) {
             return of(new HttpResponse({ status: 200, body }));
         }
@@ -92,14 +94,14 @@ export class FakeBackendInterceptor implements HttpInterceptor {
         }
 
         function currentUser() {
-            if (!isLoggedIn()) return;
-            const id = parseInt(headers.get('Authorization').split('.')[1]);
+            if (!isLoggedIn()) { return; }
+            const id = parseInt(headers.get('Authorization').split('.')[1], 10);
             return users.find(x => x.id === id);
         }
 
         function idFromUrl() {
             const urlParts = url.split('/');
-            return parseInt(urlParts[urlParts.length - 1]);
+            return parseInt(urlParts[urlParts.length - 1], 10);
         }
     }
 }
